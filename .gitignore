@@ -58,3 +58,9 @@ bin/
 ### envs ###
 db.properties
 /courseJDBC.iml
+
+# IntelliJ project files
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+demo-dao-jdbc.iml
