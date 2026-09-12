@@ -1,11 +1,28 @@
 package model.dao.impl;
 
+import db.DB;
+import db.DBException;
 import model.dao.SellerDao;
+import model.entities.Department;
 import model.entities.Seller;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 public class SellerDaoJDBC implements SellerDao {
+    // Esta classe implementa a interface SellerDao utilizando a tecnologia JDBC para acesso ao banco de dados
+    // Caso um dia a forma de acesso ao banco de dados mude (por exemplo, passe a ser passado um ORM), aí basta criar uma nova classe que implementa a interface SellerDao
+    // Esta classe será responsável por executar as querys no banco de dados referentes a diferentes tipos de operações (consulta, inserção, atualização, deleção) e também
+    //por retornar o resultado no formato de objetos das entidades envolvidas, quando for o caso
+    private Connection conn;
+
+    public SellerDaoJDBC(Connection conn){
+        this.conn = conn;
+    }
+
     @Override
     public void insert(Seller obj) {
 
@@ -23,7 +40,45 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public Seller findById(Integer id) {
-        return null;
+        PreparedStatement st = null;
+        ResultSet rs = null;
+
+        try{
+            st = conn.prepareStatement(
+                    "SELECT seller.*,department.Name as DepName "
+                    + "FROM seller INNER JOIN department "
+                    + "ON seller.DepartmentId = department.Id "
+                    + "WHERE seller.Id = ?"
+            );
+
+            st.setInt(1, id);
+
+            rs = st.executeQuery();
+
+            if (rs.next()){ // Quando o ResultSet é criado, ele inicia no posição zero, onde não tem dados, só tem da posição seguinte em diante (se tiver)
+                // Por isso temos que começar verificando se existe um próximo elemento no ResultSet
+                Department dep = new Department();
+                dep.setId(rs.getInt("DepartmentId"));
+                dep.setName(rs.getString("DepName"));
+
+                Seller seller = new Seller();
+                seller.setId(rs.getInt("Id"));
+                seller.setName(rs.getString("Name"));
+                seller.setEmail(rs.getString("Email"));
+                seller.setBirthDate(rs.getDate("BirthDate").toLocalDate());
+                seller.setBaseSalary(rs.getDouble("BaseSalary"));
+                seller.setDepartment(dep);
+
+                return seller;
+
+            }
+            return null; // Se não cair no if do rs.next(), significa que a consulta não retornou nada, então não existe um Seller com o id informado
+        } catch (SQLException e) {
+            throw new DBException(e.getMessage());
+        } finally {
+            DB.closeStatement(st);
+            DB.closeResultSet(rs);
+        }
     }
 
     @Override
