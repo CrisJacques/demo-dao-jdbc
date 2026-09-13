@@ -10,7 +10,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SellerDaoJDBC implements SellerDao {
     // Esta classe implementa a interface SellerDao utilizando a tecnologia JDBC para acesso ao banco de dados
@@ -71,6 +74,47 @@ public class SellerDaoJDBC implements SellerDao {
     public List<Seller> findAll() {
         return List.of();
     }
+
+    @Override
+    public List<Seller> findByDepartment(Department department) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+
+        try{
+            st = conn.prepareStatement(
+                    "SELECT seller.*,department.Name as DepName "
+                            + "FROM seller INNER JOIN department "
+                            + "ON seller.DepartmentId = department.Id "
+                            + "WHERE DepartmentId = ? "
+                            + "ORDER BY Name"
+            );
+            st.setInt(1, department.getId());
+
+            rs = st.executeQuery();
+
+            List<Seller> list = new ArrayList<>();
+            Map<Integer, Department> map = new HashMap<>(); // map que vai armazenar todos os Department que forem instanciados
+
+            while (rs.next()){
+                Department dep = map.get(rs.getInt("DepartmentId")); // verificando se o Department já existe, para só instanciar se ainda não existir
+
+                if (dep == null) {// quando o map.get() não encontra o elemento buscado, ele retorna null
+                    dep = instantiateDepartment(rs);
+                    map.put(rs.getInt("DepartmentId"), dep);
+                }
+
+                Seller seller = instantiateSeller(rs, dep);
+                list.add(seller);
+            }
+            return list;
+        } catch (SQLException e) {
+            throw new DBException(e.getMessage());
+        } finally {
+            DB.closeStatement(st);
+            DB.closeResultSet(rs);
+        }
+    }
+
 
     private Seller instantiateSeller(ResultSet rs, Department dep) throws SQLException {
         Seller seller = new Seller();
