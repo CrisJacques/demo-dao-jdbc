@@ -6,10 +6,7 @@ import model.dao.SellerDao;
 import model.entities.Department;
 import model.entities.Seller;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +25,40 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public void insert(Seller obj) {
+        PreparedStatement st = null;
+        try{
+            st = conn.prepareStatement(
+                    "INSERT INTO seller "
+                            + "(Name, Email, BirthDate, BaseSalary, DepartmentId) "
+                            + "VALUES "
+                            + "(?, ?, ?, ?, ?)",
+            Statement.RETURN_GENERATED_KEYS);
 
+            st.setString(1, obj.getName());
+            st.setString(2, obj.getEmail());
+            st.setDate(3, Date.valueOf(obj.getBirthDate()));
+            st.setDouble(4, obj.getBaseSalary());
+            st.setInt(5, obj.getDepartment().getId());
+
+            int rowsAffected = st.executeUpdate();
+
+            if (rowsAffected > 0) { // Verifica se realmente foi inserido algum registro no banco
+                ResultSet rs = st.getGeneratedKeys(); // As chaves geradas no banco são disponibilizadas no formato de um ResultSet
+                if (rs.next()) { // Se realmente tem algo dentro do ResultSet
+                    int id = rs.getInt(1); // Pega o id do registro inserido no banco (foi só 1)
+                    obj.setId(id);// Seta esse id no objeto passado por parâmetro para que ele fique atualizado
+                }
+                DB.closeResultSet(rs);
+            }
+            else {
+                throw new DBException("Unexpected error! No rows affected!");
+            }
+
+        } catch (SQLException e) {
+            throw new DBException(e.getMessage());
+        } finally {
+            DB.closeStatement(st);
+        }
     }
 
     @Override
