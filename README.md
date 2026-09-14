@@ -105,11 +105,52 @@ Há também um arquivo de exemplo em `db.properties.example`.
 ## Como executar
 
 1. Configure o arquivo `db.properties` com as credenciais do seu MySQL.
-2. Certifique-se de que o banco `coursejdbc` exista e tenha as tabelas necessárias.
-3. Abra o projeto no IntelliJ IDEA.
-4. Execute as classes:
+2. Crie o banco `coursejdbc` no MySQL, se ainda não existir.
+3. Antes de rodar os programas Java, execute o script `populateDatabase.sql` para popular o banco com os dados iniciais necessários aos testes.
+4. Abra o projeto no IntelliJ IDEA.
+5. Execute as classes:
    - `application.Program` para testar `Seller`;
    - `application.ProgramDepartment` para testar `Department`.
+
+> Importante: o arquivo `populateDatabase.sql` deve ser usado antes de executar `Program` e `ProgramDepartment`, para garantir que as tabelas e registros de exemplo estejam disponíveis.
+
+### SQL mínimo para criar o banco e as tabelas
+
+Caso o script de população ainda não exista no seu ambiente, o trecho abaixo pode ser usado como base para criar a estrutura mínima do projeto:
+
+```sql
+CREATE DATABASE coursejdbc;
+
+USE coursejdbc;
+
+CREATE TABLE department (
+    Id INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE seller (
+    Id INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(80) NOT NULL,
+    Email VARCHAR(80) NOT NULL,
+    BirthDate DATE NOT NULL,
+    BaseSalary DOUBLE NOT NULL,
+    DepartmentId INT NOT NULL,
+    CONSTRAINT fk_department_id
+        FOREIGN KEY (DepartmentId) REFERENCES department(Id)
+);
+
+INSERT INTO department (Name) VALUES
+('Computers'),
+('Electronics'),
+('Fashion'),
+('Books');
+
+INSERT INTO seller (Name, Email, BirthDate, BaseSalary, DepartmentId) VALUES
+('Bob Brown', 'bob@gmail.com', '1998-04-21', 3000.00, 1),
+('Maria Green', 'maria@gmail.com', '1979-12-31', 3500.00, 2),
+('Alex Grey', 'alex@gmail.com', '1988-01-15', 2200.00, 1),
+('Martha Red', 'martha@gmail.com', '1993-11-30', 4200.00, 3);
+```
 
 ## Observação
 
